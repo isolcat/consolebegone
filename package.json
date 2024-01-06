@@ -3,7 +3,7 @@
   "displayName": "ConsoleBeGone",
   "description": "Quickly identifying and removing debug lines",
   "publisher": "isolcat",
-  "version": "0.0.2",
+  "version": "0.0.3",
   "icon": "img/logo.png",
   "engines": {
     "vscode": "^1.40.0"
