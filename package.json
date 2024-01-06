@@ -1,7 +1,8 @@
 {
   "name": "consolebegone",
   "displayName": "ConsoleBeGone",
-  "description": "",
+  "description": "Quickly identifying and removing debug lines",
+  "publisher": "isolcat",
   "version": "0.0.1",
   "engines": {
     "vscode": "^1.85.0"
@@ -13,8 +14,7 @@
     "onLanguage:javascript",
     "onLanguage:typescript",
     "onLanguage:javascriptreact",
-    "onLanguage:typescriptreact",
-    "onCommand:consolebegone.checkWorkspace"
+    "onLanguage:typescriptreact"
   ],
   "main": "./extension.js",
   "contributes": {
@@ -24,6 +24,10 @@
         "title": "检查工作区的 Console 调用"
       }
     ]
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/isolcat/consolebegone"
   },
   "scripts": {
     "lint": "eslint .",
