@@ -1,32 +1,33 @@
 const vscode = require('vscode');
 const parser = require('@babel/parser');
 const traverse = require('@babel/traverse').default;
+const path = require('path');
+const os = require('os');
 
 let consoleLogDecorationType;
 let consoleLogTextDecorationType;
 
 function activate(context) {
-
     // 初始化装饰类型
     consoleLogDecorationType = vscode.window.createTextEditorDecorationType({
-			borderWidth: '1px',
-			borderStyle: 'solid',
-			overviewRulerColor: 'red',
-			overviewRulerLane: vscode.OverviewRulerLane.Right,
-			light: {
-					borderColor: 'red',
-			},
-			dark: {
-					borderColor: 'yellow',
-			}
-	});
+        borderWidth: '1px',
+        borderStyle: 'solid',
+        overviewRulerColor: 'red',
+        overviewRulerLane: vscode.OverviewRulerLane.Right,
+        light: {
+            borderColor: 'red',
+        },
+        dark: {
+            borderColor: 'yellow',
+        }
+    });
 
     consoleLogTextDecorationType = vscode.window.createTextEditorDecorationType({
         isWholeLine: true,
         after: {
             margin: '0 0 0 3em',
             color: 'rgba(128, 128, 128, 0.7)',
-            contentText: '⚠️ 需要移除的 console 调用',
+            contentText: '⚠️ Needs to remove console calls',
             fontWeight: 'normal'
         }
     });
@@ -88,7 +89,7 @@ function traverseASTAndMarkConsoleCalls(ast, editor) {
 }
 
 function checkWorkspaceForConsole() {
-    vscode.workspace.findFiles('{**/*.js,**/*.ts,**/*.jsx,**/*.tsx}', '**/node_modules/**').then((files) => {
+    vscode.workspace.findFiles(`{**/*.js,**/*.ts,**/*.jsx,**/*.tsx}`, '**/node_modules/**').then((files) => {
         files.forEach((file) => {
             vscode.workspace.openTextDocument(file).then((document) => {
                 const text = document.getText();
@@ -118,7 +119,7 @@ function traverseASTAndFindConsole(ast, file) {
     });
 
     if (hasConsole) {
-        vscode.window.showWarningMessage(`Console 调用在文件中找到: ${file.fsPath}`);
+        vscode.window.showWarningMessage(`Console calls found in the file: ${file.fsPath}`);
     }
 }
 
