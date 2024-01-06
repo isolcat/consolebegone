@@ -9,17 +9,17 @@ function activate(context) {
 
     // 初始化装饰类型
     consoleLogDecorationType = vscode.window.createTextEditorDecorationType({
-        borderWidth: '1px',
-        borderStyle: 'solid',
-        overviewRulerColor: 'blue',
-        overviewRulerLane: vscode.OverviewRulerLane.Right,
-        light: {
-            borderColor: 'darkblue'
-        },
-        dark: {
-            borderColor: 'lightblue'
-        }
-    });
+			borderWidth: '1px',
+			borderStyle: 'solid',
+			overviewRulerColor: 'red',
+			overviewRulerLane: vscode.OverviewRulerLane.Right,
+			light: {
+					borderColor: 'red',
+			},
+			dark: {
+					borderColor: 'yellow',
+			}
+	});
 
     consoleLogTextDecorationType = vscode.window.createTextEditorDecorationType({
         isWholeLine: true,
