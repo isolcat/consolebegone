@@ -1,36 +1,137 @@
-// The module 'vscode' contains the VS Code extensibility API
-// Import the module and reference it with the alias vscode in your code below
 const vscode = require('vscode');
+const parser = require('@babel/parser');
+const traverse = require('@babel/traverse').default;
 
-// This method is called when your extension is activated
-// Your extension is activated the very first time the command is executed
+let consoleLogDecorationType;
+let consoleLogTextDecorationType;
 
-/**
- * @param {vscode.ExtensionContext} context
- */
 function activate(context) {
 
-	// Use the console to output diagnostic information (console.log) and errors (console.error)
-	// This line of code will only be executed once when your extension is activated
-	console.log('Congratulations, your extension "consolebegone" is now active!');
+    // 初始化装饰类型
+    consoleLogDecorationType = vscode.window.createTextEditorDecorationType({
+        borderWidth: '1px',
+        borderStyle: 'solid',
+        overviewRulerColor: 'blue',
+        overviewRulerLane: vscode.OverviewRulerLane.Right,
+        light: {
+            borderColor: 'darkblue'
+        },
+        dark: {
+            borderColor: 'lightblue'
+        }
+    });
 
-	// The command has been defined in the package.json file
-	// Now provide the implementation of the command with  registerCommand
-	// The commandId parameter must match the command field in package.json
-	let disposable = vscode.commands.registerCommand('consolebegone.helloWorld', function () {
-		// The code you place here will be executed every time your command is executed
+    consoleLogTextDecorationType = vscode.window.createTextEditorDecorationType({
+        isWholeLine: true,
+        after: {
+            margin: '0 0 0 3em',
+            color: 'rgba(128, 128, 128, 0.7)',
+            contentText: '⚠️ 需要移除的 console 调用',
+            fontWeight: 'normal'
+        }
+    });
 
-		// Display a message box to the user
-		vscode.window.showInformationMessage('Hello World from ConsoleBeGone!');
-	});
+    context.subscriptions.push(vscode.workspace.onDidSaveTextDocument((document) => {
+        if (['javascript', 'typescript', 'javascriptreact', 'typescriptreact'].includes(document.languageId)) {
+            const editor = vscode.window.activeTextEditor;
+            if (editor && editor.document === document) {
+                updateDecorations(editor);
+            }
+        }
+    }));
 
-	context.subscriptions.push(disposable);
+    let disposable = vscode.commands.registerCommand('consolebegone.checkWorkspace', function () {
+        checkWorkspaceForConsole();
+    });
+
+    context.subscriptions.push(disposable);
 }
 
-// This method is called when your extension is deactivated
-function deactivate() {}
+function updateDecorations(editor) {
+    const text = editor.document.getText();
+    const ast = parser.parse(text, {
+        sourceType: 'module',
+        plugins: ['jsx', 'typescript']
+    });
+
+    traverseASTAndMarkConsoleCalls(ast, editor);
+}
+
+function traverseASTAndMarkConsoleCalls(ast, editor) {
+    const consoleNodes = [];
+
+    traverse(ast, {
+        MemberExpression(path) {
+            if (
+                path.node.object &&
+                path.node.object.name === 'console' &&
+                path.parent.type === 'CallExpression'
+            ) {
+                consoleNodes.push(path.parent);
+            }
+        }
+    });
+
+    const colorDecorations = consoleNodes.map(node => {
+        const startPos = editor.document.positionAt(node.start);
+        const endPos = editor.document.positionAt(node.end);
+        return { range: new vscode.Range(startPos, endPos) };
+    });
+
+    const textDecorations = consoleNodes.map(node => {
+        const startPos = editor.document.positionAt(node.start);
+        return { range: new vscode.Range(startPos, startPos) };
+    });
+
+    editor.setDecorations(consoleLogDecorationType, colorDecorations);
+    editor.setDecorations(consoleLogTextDecorationType, textDecorations);
+}
+
+function checkWorkspaceForConsole() {
+    vscode.workspace.findFiles('{**/*.js,**/*.ts,**/*.jsx,**/*.tsx}', '**/node_modules/**').then((files) => {
+        files.forEach((file) => {
+            vscode.workspace.openTextDocument(file).then((document) => {
+                const text = document.getText();
+                const ast = parser.parse(text, {
+                    sourceType: 'module',
+                    plugins: ['jsx', 'typescript']
+                });
+
+                traverseASTAndFindConsole(ast, file);
+            });
+        });
+    });
+}
+
+function traverseASTAndFindConsole(ast, file) {
+    let hasConsole = false;
+
+    traverse(ast, {
+        CallExpression(path) {
+            if (
+                path.node.callee.object &&
+                path.node.callee.object.name === 'console'
+            ) {
+                hasConsole = true;
+            }
+        }
+    });
+
+    if (hasConsole) {
+        vscode.window.showWarningMessage(`Console 调用在文件中找到: ${file.fsPath}`);
+    }
+}
+
+function deactivate() {
+    if (consoleLogDecorationType) {
+        consoleLogDecorationType.dispose();
+    }
+    if (consoleLogTextDecorationType) {
+        consoleLogTextDecorationType.dispose();
+    }
+}
 
 module.exports = {
-	activate,
-	deactivate
-}
+    activate,
+    deactivate
+};
